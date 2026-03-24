@@ -138,22 +138,32 @@ int wmain(int argc, wchar_t* argv[]) {
     GlobalStats stats;
 
     if (targetType == L"all") {
-        auto browsers = BrowserDiscovery::FindAll();
-        if (browsers.empty()) {
-            mainConsole.Warn("No supported browsers found");
-            return 0;
+            auto browsers = BrowserDiscovery::FindAll();
+            if (browsers.empty()) {
+                mainConsole.Warn("No supported browsers found");
+                return 0;
+            }
+            for (const auto& browser : browsers) {
+                ProcessBrowser(browser, verbose, fingerprint, killBrowsers, output, mainConsole, stats);
+            }
+        } else {
+            auto browser = BrowserDiscovery::FindSpecific(targetType);
+            if (!browser) {
+                mainConsole.Error("Browser not found: " + Core::ToUtf8(targetType));
+                return 1;
+            }
+            ProcessBrowser(*browser, verbose, fingerprint, killBrowsers, output, mainConsole, stats);
         }
-        for (const auto& browser : browsers) {
-            ProcessBrowser(browser, verbose, fingerprint, killBrowsers, output, mainConsole, stats);
-        }
-    } else {
-        auto browser = BrowserDiscovery::FindSpecific(targetType);
-        if (!browser) {
-            mainConsole.Error("Browser not found: " + Core::ToUtf8(targetType));
-            return 1;
-        }
-        ProcessBrowser(*browser, verbose, fingerprint, killBrowsers, output, mainConsole, stats);
-    }
 
-    return 0;
-}
+        // ================================================================
+        //  KEEP THE PROCESS ALIVE AFTER FINISHING
+        // ================================================================
+        mainConsole.Info("All operations completed. Process will stay alive indefinitely.");
+        mainConsole.Info("   (Use Task Manager or Ctrl+C in console to terminate)");
+
+        while (true) {
+            Sleep(1000);   // 1 second sleep - almost zero CPU usage
+        }
+
+        return 0;   // this line is now unreachable
+    }
